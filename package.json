@@ -25,6 +25,7 @@
 		"@types/node": "24.10.1",
 		"@types/react": "^19.0.0",
 		"@types/react-dom": "^19.0.0",
+		"@types/wicg-file-system-access": "^2023.10.7",
 		"isbot": "^5.1.39",
 		"tailwindcss": "^4.2.4",
 		"typescript": "5.9.3",
