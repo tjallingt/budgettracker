@@ -3,19 +3,17 @@ import {
   pipe,
   strictObject,
   string,
+  regex,
   number,
+  record,
   array,
   minLength,
-  toDate,
   parse,
+  integer,
 } from "valibot";
 import type { InferOutput } from "valibot";
 
-const INITIAL_BUDGET_DATA: BudgetData = {
-  totalBudget: 0,
-  categories: [],
-  expenses: [],
-};
+const INITIAL_BUDGET_DATA: BudgetData = {};
 
 export default function Home() {
   const [handle, setHandle] = useState<FileSystemFileHandle | null>(null);
@@ -101,27 +99,39 @@ async function saveFile(handle: FileSystemFileHandle, content: string) {
   await writable.close();
 }
 
-export const CategorySchema = strictObject({
+const CategorySchema = strictObject({
   name: pipe(string(), minLength(1)),
   budget: number(),
 });
 
-export const ExpenseSchema = strictObject({
+const ExpenseSchema = strictObject({
+  dayOfMonth: pipe(number(), integer()),
   category: pipe(string(), minLength(1)),
   amount: number(),
-  date: pipe(string(), toDate()),
   description: string(),
 });
 
-export const BudgetDataSchema = strictObject({
+const MonthlyBudgetSchema = strictObject({
   totalBudget: number(),
   categories: array(CategorySchema),
   expenses: array(ExpenseSchema),
 });
 
-export type Category = InferOutput<typeof CategorySchema>;
-export type Expense = InferOutput<typeof ExpenseSchema>;
-export type BudgetData = InferOutput<typeof BudgetDataSchema>;
+const MonthlySchema = strictObject({
+  totalBudget: number(),
+  categories: array(CategorySchema),
+  expenses: array(ExpenseSchema),
+});
+
+export const YEAR_MONTH_REGEX: RegExp = /^\d{4}-(?:0[1-9]|1[0-2])$/u;
+const YearMonthSchema = pipe(string(), regex(YEAR_MONTH_REGEX));
+
+const BudgetDataSchema = record(YearMonthSchema, MonthlyBudgetSchema);
+
+type Category = InferOutput<typeof CategorySchema>;
+type Expense = InferOutput<typeof ExpenseSchema>;
+type MonthlyBudget = InferOutput<typeof MonthlyBudgetSchema>;
+type BudgetData = InferOutput<typeof BudgetDataSchema>;
 
 function BudgetEditor({
   initialData,
@@ -130,26 +140,13 @@ function BudgetEditor({
   initialData: BudgetData;
   onSave: (newData: BudgetData) => void;
 }) {
-  const [totalBudget, setTotalBudget] = useState(initialData.totalBudget);
-  const [categories, setCategories] = useState(initialData.categories);
-  const [expenses, setExpenses] = useState(initialData.expenses);
-
   function handleSave() {
-    onSave({
-      totalBudget,
-      categories,
-      expenses,
-    });
+    onSave({});
   }
   return (
     <>
       <label>
-        Total Budget:{" "}
-        <input
-          type="number"
-          value={totalBudget}
-          onChange={(e) => setTotalBudget(Number(e.target.value))}
-        />
+        Total Budget: <input type="number" />
       </label>
 
       <button onClick={handleSave}>Save</button>
